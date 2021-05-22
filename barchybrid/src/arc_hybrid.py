@@ -21,12 +21,10 @@ class ArcHybridLSTM:
         global LEFT_ARC, RIGHT_ARC, SHIFT, SWAP
         LEFT_ARC, RIGHT_ARC, SHIFT, SWAP = 0,1,2,3
 
-        global NO_COMPOSE, SOFT_COMP, HARD_COMP, GEN_COMP 
-        #PERCEPTRON_CMP, EXTENDED_PERCEPTRON_CMP, ADD_PERCEPTRON_CMP, CONCATENATE, CONCATENATE_PERCEPTRON, ADDITION, AVERAGE, PERCEPTRON_TANH, IDENTITY
-        #NO_COMPOSE, PERCEPTRON_CMP, EXTENDED_PERCEPTRON_CMP, ADD_PERCEPTRON_CMP, CONCATENATE, CONCATENATE_PERCEPTRON, ADDITION, AVERAGE, PERCEPTRON_TANH, IDENTITY = 0,1,2,3,4,5,6,7,8,9
+        global NO_COMP, SOFT_COMP, HARD_COMP, GEN_COMP 
         NO_COMP, HARD_COMP, SOFT_COMP, GEN_COMP = 0,1,2,3
 
-        self.composition = GEN_COMP 
+        self.composition = options.nucleus_composition
 
         # this list contains all relations and is used for generalized composition. it would be nice if the list is filled automatically when reading the corpora
         all_rels = [ '_','acl','advcl','advmod','amod','appos','aux','case','cc','ccomp','compound','conj','cop','csubj','dep','det','discourse','dislocated','expl','fixed','flat','goeswith','iobj','list','mark','nmod','nsubj','nummod','obj','obl','orphan','parataxis','punct','reparandum','root','vocative','xcomp', 'det', 'case', 'clf', 'cop', 'mark', 'aux', 'cc', 'expl']
@@ -34,7 +32,7 @@ class ArcHybridLSTM:
         if self.composition in [HARD_COMP, SOFT_COMP]:
           self.compositional_relations = functional_rels
         elif self.composition in [GEN_COMP]:
-          self.compositional_relations = functional_rels
+          self.compositional_relations = all_rels
         else:
           self.compositional_relations = []
         

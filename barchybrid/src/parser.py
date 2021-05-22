@@ -207,6 +207,8 @@ each")
     group.add_option("--userl", action="store_true", dest="rlFlag", default=False)
     group.add_option("--k", type="int", metavar="INTEGER", default=3,
         help="Number of stack elements to feed to MLP")
+    group.add_option("--nucleus-composition", type="int", metavar="INTEGER", default=3,
+        help="Nucleus composition 0: disable, 1: hard, 2: soft, 3: general")
     parser.add_option_group(group)
 
     group = OptionGroup(parser, "Graph-based parser options")
