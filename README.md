@@ -14,7 +14,7 @@ We adapted the parser to Universal Dependencies and extended it as described in 
 >Aaron Smith, Bernd Bohnet, Miryam de Lhoneux, Joakim Nivre, Yan Shao and Sara Stymne. 2018. 82 Treebanks, 34 Models: Universal Dependency Parsing with Cross-Treebank Models. In Proceedings of the CoNLL 2018 Shared Task: Multilingual Parsing from Raw Text to Universal Dependencies.
 
 * (Version 2.4) The Nucleus Composition (--nucleus-composition) is added to the code:
->Ali Basirat, and Joakim Nivre. 2021. Syntactic Nuclei in Dependency Parsing - A Multilingual Exploration. In Proceedings of the 16th Conference of the European Chapter of the Association for Computational Linguistics: Main Volume 
+>Ali Basirat, and Joakim Nivre. 2021. [Syntactic Nuclei in Dependency Parsing - A Multilingual Exploration](https://www.aclweb.org/anthology/2021.eacl-main.117/). In Proceedings of the 16th Conference of the European Chapter of the Association for Computational Linguistics: Main Volume 
 
 The techniques behind the original parser are described in the paper [Simple and Accurate Dependency Parsing Using Bidirectional LSTM Feature Representations](https://www.transacl.org/ojs/index.php/tacl/article/viewFile/885/198).
 
