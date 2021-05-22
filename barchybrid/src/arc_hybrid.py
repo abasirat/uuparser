@@ -21,14 +21,23 @@ class ArcHybridLSTM:
         global LEFT_ARC, RIGHT_ARC, SHIFT, SWAP
         LEFT_ARC, RIGHT_ARC, SHIFT, SWAP = 0,1,2,3
 
-        global NO_COMPOSE, PERCEPTRON_CMP, EXTENDED_PERCEPTRON_CMP, ADD_PERCEPTRON_CMP, CONCATENATE, CONCATENATE_PERCEPTRON, ADDITION, AVERAGE, PERCEPTRON_TANH, IDENTITY
-        NO_COMPOSE, PERCEPTRON_CMP, EXTENDED_PERCEPTRON_CMP, ADD_PERCEPTRON_CMP, CONCATENATE, CONCATENATE_PERCEPTRON, ADDITION, AVERAGE, PERCEPTRON_TANH, IDENTITY = 0,1,2,3,4,5,6,7,8,9
+        global NO_COMPOSE, SOFT_COMP, HARD_COMP, GEN_COMP 
+        #PERCEPTRON_CMP, EXTENDED_PERCEPTRON_CMP, ADD_PERCEPTRON_CMP, CONCATENATE, CONCATENATE_PERCEPTRON, ADDITION, AVERAGE, PERCEPTRON_TANH, IDENTITY
+        #NO_COMPOSE, PERCEPTRON_CMP, EXTENDED_PERCEPTRON_CMP, ADD_PERCEPTRON_CMP, CONCATENATE, CONCATENATE_PERCEPTRON, ADDITION, AVERAGE, PERCEPTRON_TANH, IDENTITY = 0,1,2,3,4,5,6,7,8,9
+        NO_COMPOSE, HARD_COMP, SOFT_COMP, GEN_COMP = 0,1,2,3
 
-        self.composition = NO_COMPOSE #ADDITION
+        self.composition = NO_COMPOSE 
+
+        # this list contains all relations and is used for generalized composition. it would be nice if the list is filled automatically when reading the corpora
         all_rels = [ '_','acl','advcl','advmod','amod','appos','aux','case','cc','ccomp','compound','conj','cop','csubj','dep','det','discourse','dislocated','expl','fixed','flat','goeswith','iobj','list','mark','nmod','nsubj','nummod','obj','obl','orphan','parataxis','punct','reparandum','root','vocative','xcomp', 'det', 'case', 'clf', 'cop', 'mark', 'aux', 'cc', 'expl']
         functional_rels = ['det', 'case', 'clf', 'cop', 'mark', 'aux', 'cc']
-        four_functional_rels = ['case', 'cop', 'mark', 'aux']
-        self.compositional_relations = functional_rels
+        if self.composition in [HARD_COMP, SOFT_COMP]:
+          self.compositional_relations = functional_rels
+        elif self.composition in [GEN_COMP]:
+          self.compositional_relations = functional_rels
+        else:
+          self.compositional_relations = []
+        
         self.compositional_relations_dict = {rel:idx for idx,rel in enumerate(self.compositional_relations)}
 
         self.model = dy.ParameterCollection()
@@ -59,31 +68,13 @@ class ArcHybridLSTM:
             mlp_in_dims = self.feature_extractor.lstm_input_size*self.nnvecs*(self.k+1)
         print("The size of the MLP input layer is {0}".format(mlp_in_dims))
 
-        # Ali: adding the combiner layer
-        if self.composition in [PERCEPTRON_CMP, EXTENDED_PERCEPTRON_CMP, CONCATENATE_PERCEPTRON, PERCEPTRON_TANH]:
-          cmb_sz = 2*options.lstm_output_size
-          self.combiner_W = self.model.add_parameters((cmb_sz, 2*cmb_sz), name='cmbW')
-          self.combiner_b = self.model.add_parameters(cmb_sz, name='cmbb')
-
-
-        if self.composition == ADD_PERCEPTRON_CMP:
-          cmb_sz = 2*options.lstm_output_size
-          self.combiner_W = self.model.add_parameters((cmb_sz, cmb_sz), name='cmbW')
-          self.combiner_b = self.model.add_parameters(cmb_sz, name='cmbb')
-
         if self.composition == ADDITION:
           rel_emb_sz = 10
           self.cmp_rel_lookup = self.model.add_lookup_parameters((len(self.compositional_relations), rel_emb_sz))
           cmb_sz = 2*2*options.lstm_output_size + rel_emb_sz
           out_sz = 2*options.lstm_output_size
-          #self.combiner_W = self.model.add_parameters((2*options.lstm_output_size, cmb_sz), name='cmbW')
-          #self.combiner_b = self.model.add_parameters(2*options.lstm_output_size, name='cmbb')
           self.combiner_W1 = self.model.add_parameters((out_sz, cmb_sz), name='cmbW1')
           self.combiner_b1 = self.model.add_parameters(out_sz, name='cmbb1')
-          #self.combiner_W2 = self.model.add_parameters((out_sz, 2*cmb_sz), name='cmbW2')
-          #self.combiner_b2 = self.model.add_parameters(out_sz, name='cmbb2')
-          #self.combiner_W3 = self.model.add_parameters((1, cmb_sz), name='cmbW2')
-          #self.combiner_b3 = self.model.add_parameters(1, name='cmbb2')
 
 
         self.unlabeled_MLP = MLP(self.model, 'unlabeled', mlp_in_dims, options.mlp_hidden_dims,
@@ -204,92 +195,18 @@ class ArcHybridLSTM:
                 elif child.pred_relation not in self.compositional_relations :
                   parent.lstms[best[1] + hoffset] = child.lstms[best[1] + hoffset]
 
-            #Ali: combine operator
-            if self.composition == IDENTITY:
-              rel = best[0].split(':')[0]
-              if rel in self.compositional_relations : 
-                child.lstms[0] = child.lstms[0]-child.lstms[0]
-
-            if self.composition == PERCEPTRON_CMP:
-              rel = best[0].split(':')[0]
-              if rel in self.compositional_relations : 
-                W = dy.parameter(self.combiner_W) 
-                b = dy.parameter(self.combiner_b)
-                vec = dy.concatenate([parent.lstms[0], child.lstms[0]])
-                parent.lstms[0] = (W*vec + b)
-
-            if self.composition == PERCEPTRON_TANH:
-              rel = best[0].split(':')[0]
-              if rel in self.compositional_relations : 
-                W = dy.parameter(self.combiner_W) 
-                b = dy.parameter(self.combiner_b)
-                vec = dy.concatenate([parent.lstms[0], child.lstms[0]])
-                parent.lstms[0] = dy.tanh(W*vec + b)
-
-
-            if self.composition == EXTENDED_PERCEPTRON_CMP:
+            if self.composition:
               rel = best[0].split(':')[0]
               if rel in self.compositional_relations :
-                W = dy.parameter(self.combiner_W) 
-                b = dy.parameter(self.combiner_b)
-                vec = dy.concatenate([parent.lstms[0], child.lstms[0]])
-                parent.lstms[0] = (W*vec + b)
+                if self.composition == HARD_COMP:
+                  parent.lstms[0] = parent.lstms[0] + child.lstms[0]
+                else: # then it is SOFT_COMP or GEN_COMP
+                  rel_emb = self.cmp_rel_lookup[self.compositional_relations_dict[rel]]
+                  v = dy.concatenate([parent.lstms[0], child.lstms[0], rel_emb])
 
-            if self.composition == ADD_PERCEPTRON_CMP:
-              rel = best[0].split(':')[0]
-              if rel in self.compositional_relations :
-                W = dy.parameter(self.combiner_W) 
-                b = dy.parameter(self.combiner_b)
-                vec = (parent.lstms[0] + child.lstms[0])
-                parent.lstms[0] = (W*vec + b)
-
-            if self.composition == CONCATENATE:
-              rel = best[0].split(':')[0]
-              if rel in self.compositional_relations :
-                parent.lstms[3] = child.lstms[0]
-
-            if self.composition == CONCATENATE_PERCEPTRON:
-              rel = best[0].split(':')[0]
-              if rel in self.compositional_relations :
-                W = dy.parameter(self.combiner_W) 
-                b = dy.parameter(self.combiner_b)
-                vec = dy.concatenate([parent.lstms[0], child.lstms[0]])
-                vec = (W*vec + b)
-                parent.lstms[3] = vec
-
-            if self.composition == ADDITION:
-              rel = best[0].split(':')[0]
-              if rel in self.compositional_relations :
-                # for soft composition uncomment this part
-                rel_emb = self.cmp_rel_lookup[self.compositional_relations_dict[rel]]
-                vec1 = dy.concatenate([parent.lstms[0], child.lstms[0], rel_emb])
-
-                W1 = dy.parameter(self.combiner_W1) 
-                b1 = dy.parameter(self.combiner_b1)
-                p1 = dy.logistic(W1*vec1 + b1)
-                #p1 = W1*vec1 + b1
-
-                ##W2 = dy.parameter(self.combiner_W2) 
-                ##b2 = dy.parameter(self.combiner_b2)
-                ##p2  = dy.logistic(W2*p1 + b2)
-
-                ##W3 = dy.parameter(self.combiner_W3) 
-                ##b3 = dy.parameter(self.combiner_b3)
-                ##p  = dy.logistic(W3*p2 + b3)
-               
-                # Hard composition
-                #vec = parent.lstms[0] + child.lstms[0]
-                # Soft composition
-                vec = p1
-                #vec = p1 #child.lstms[0]*p
-                parent.lstms[0] = vec
-
-            if self.composition == AVERAGE:
-              rel = best[0].split(':')[0]
-              if rel in self.compositional_relations :
-                vec = (parent.lstms[0] + child.lstms[0])/2
-                parent.lstms[0] = vec
-
+                  W = dy.parameter(self.combiner_W1) 
+                  b = dy.parameter(self.combiner_b1)
+                  parent.lstms[0] = dy.logistic(W*v + b)
 
     def calculate_cost(self,scores,s0,s1,b,beta,stack_ids):
         if len(scores[LEFT_ARC]) == 0:
