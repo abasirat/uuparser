@@ -24,9 +24,9 @@ class ArcHybridLSTM:
         global NO_COMPOSE, SOFT_COMP, HARD_COMP, GEN_COMP 
         #PERCEPTRON_CMP, EXTENDED_PERCEPTRON_CMP, ADD_PERCEPTRON_CMP, CONCATENATE, CONCATENATE_PERCEPTRON, ADDITION, AVERAGE, PERCEPTRON_TANH, IDENTITY
         #NO_COMPOSE, PERCEPTRON_CMP, EXTENDED_PERCEPTRON_CMP, ADD_PERCEPTRON_CMP, CONCATENATE, CONCATENATE_PERCEPTRON, ADDITION, AVERAGE, PERCEPTRON_TANH, IDENTITY = 0,1,2,3,4,5,6,7,8,9
-        NO_COMPOSE, HARD_COMP, SOFT_COMP, GEN_COMP = 0,1,2,3
+        NO_COMP, HARD_COMP, SOFT_COMP, GEN_COMP = 0,1,2,3
 
-        self.composition = NO_COMPOSE 
+        self.composition = GEN_COMP 
 
         # this list contains all relations and is used for generalized composition. it would be nice if the list is filled automatically when reading the corpora
         all_rels = [ '_','acl','advcl','advmod','amod','appos','aux','case','cc','ccomp','compound','conj','cop','csubj','dep','det','discourse','dislocated','expl','fixed','flat','goeswith','iobj','list','mark','nmod','nsubj','nummod','obj','obl','orphan','parataxis','punct','reparandum','root','vocative','xcomp', 'det', 'case', 'clf', 'cop', 'mark', 'aux', 'cc', 'expl']
@@ -62,13 +62,11 @@ class ArcHybridLSTM:
 
         if options.no_bilstms > 0:
             mlp_in_dims = options.lstm_output_size*2*self.nnvecs*(self.k+1)
-            if self.composition in [CONCATENATE, CONCATENATE_PERCEPTRON]:
-              mlp_in_dims *= 2
         else:
             mlp_in_dims = self.feature_extractor.lstm_input_size*self.nnvecs*(self.k+1)
         print("The size of the MLP input layer is {0}".format(mlp_in_dims))
 
-        if self.composition == ADDITION:
+        if self.composition in [SOFT_COMP,GEN_COMP]:
           rel_emb_sz = 10
           self.cmp_rel_lookup = self.model.add_lookup_parameters((len(self.compositional_relations), rel_emb_sz))
           cmb_sz = 2*2*options.lstm_output_size + rel_emb_sz
@@ -97,8 +95,6 @@ class ArcHybridLSTM:
 
         #feature rep
         empty = self.feature_extractor.empty
-        if self.composition in [CONCATENATE, CONCATENATE_PERCEPTRON]:
-          empty = dy.concatenate([empty, empty])
 
         topStack = [ stack.roots[-i-1].lstms if len(stack) > i else [empty] for i in range(self.k) ]
         topBuffer = [ buf.roots[i].lstms if len(buf) > i else [empty] for i in range(1) ]
@@ -334,8 +330,6 @@ class ArcHybridLSTM:
                 root.lstms = [root.vec] if self.headFlag else []
                 root.lstms += [root.vec for _ in range(self.nnvecs - hoffset)]
                 root.relation = root.relation if root.relation in self.irels else 'runk'
-                if self.composition in [CONCATENATE, CONCATENATE_PERCEPTRON]: 
-                  root.lstms += root.lstms
 
 
             while not (len(buf) == 1 and len(stack) == 0):
@@ -407,8 +401,6 @@ class ArcHybridLSTM:
                 root.lstms = [root.vec] if self.headFlag else []
                 root.lstms += [root.vec for _ in range(self.nnvecs - hoffset)]
                 root.relation = root.relation if root.relation in self.irels else 'runk'
-                if self.composition in [CONCATENATE, CONCATENATE_PERCEPTRON]: 
-                  root.lstms += root.lstms
 
             while not (len(buf) == 1 and len(stack) == 0):
                 scores = self.__evaluate(stack, buf, True)
