@@ -88,6 +88,8 @@ import io
 import sys
 import unittest
 
+import pdb
+
 # CoNLL-U column names
 ID, FORM, LEMMA, UPOS, XPOS, FEATS, HEAD, DEPREL, DEPS, MISC = range(10)
 
@@ -301,6 +303,8 @@ def evaluate(gold_ud, system_ud, deprel_weights=None):
         for words in alignment.matched_words:
             if key_fn(words.gold_word, words.gold_parent) == key_fn(words.system_word, words.system_parent_gold_aligned):
                 correct += weight_fn(words.gold_word)
+            #else: 
+            #    correct += weight_fn(words.gold_word) - 1
 
         return Score(gold, system, correct, aligned)
 
@@ -420,6 +424,7 @@ def evaluate(gold_ud, system_ud, deprel_weights=None):
         "Lemmas": alignment_score(alignment, lambda w, parent: w.columns[LEMMA]),
         "UAS": alignment_score(alignment, lambda w, parent: parent),
         "LAS": alignment_score(alignment, lambda w, parent: (parent, w.columns[DEPREL])),
+        "NLAS": alignment_score(alignment, lambda w, parent: (parent, w.columns[DEPREL]), lambda w, : len(w.columns[FORM].split('__')))
     }
 
     # Add WeightedLAS if weights are given
@@ -487,7 +492,7 @@ def main():
     if not args.verbose:
         print("LAS F1 Score: {:.2f}".format(100 * evaluation["LAS"].f1))
     else:
-        metrics = ["Tokens", "Sentences", "Words", "UPOS", "XPOS", "Feats", "AllTags", "Lemmas", "UAS", "LAS"]
+        metrics = ["Tokens", "Sentences", "Words", "UPOS", "XPOS", "Feats", "AllTags", "Lemmas", "UAS", "LAS", "NLAS"]
         if args.weights is not None:
             metrics.append("WeightedLAS")
 
