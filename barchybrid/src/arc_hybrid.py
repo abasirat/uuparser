@@ -35,8 +35,6 @@ class ArcHybridLSTM:
         else:
           self.compositional_relations = []
 
-        print(self.compositional_relations)
-        
         self.compositional_relations_dict = {rel:idx for idx,rel in enumerate(self.compositional_relations)}
 
         self.model = dy.ParameterCollection()
@@ -201,7 +199,7 @@ class ArcHybridLSTM:
 
                   W = dy.parameter(self.combiner_W1) 
                   b = dy.parameter(self.combiner_b1)
-                  parent.lstms[0] = dy.logistic(W*v + b)
+                  parent.lstms[0] = parent.lstms[0] + dy.logistic(W*v + b)
 
     def calculate_cost(self,scores,s0,s1,b,beta,stack_ids):
         if len(scores[LEFT_ARC]) == 0:
