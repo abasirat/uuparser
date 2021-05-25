@@ -26,8 +26,7 @@ class ArcHybridLSTM:
 
         self.composition = options.nucleus_composition
 
-        # this list contains all relations and is used for generalized composition. it would be nice if the list is filled automatically when reading the corpora
-        all_rels = [ '_','acl','advcl','advmod','amod','appos','aux','case','cc','ccomp','compound','conj','cop','csubj','dep','det','discourse','dislocated','expl','fixed','flat','goeswith','iobj','list','mark','nmod','nsubj','nummod','obj','obl','orphan','parataxis','punct','reparandum','root','vocative','xcomp', 'det', 'case', 'clf', 'cop', 'mark', 'aux', 'cc', 'expl']
+        all_rels = vocab[5]
         functional_rels = ['det', 'case', 'clf', 'cop', 'mark', 'aux', 'cc']
         if self.composition in [HARD_COMP, SOFT_COMP]:
           self.compositional_relations = functional_rels
@@ -35,6 +34,8 @@ class ArcHybridLSTM:
           self.compositional_relations = all_rels
         else:
           self.compositional_relations = []
+
+        print(self.compositional_relations)
         
         self.compositional_relations_dict = {rel:idx for idx,rel in enumerate(self.compositional_relations)}
 
