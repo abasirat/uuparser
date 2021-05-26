@@ -169,6 +169,8 @@ class ArcHybridLSTM:
             child = stack.roots.pop()
             parent = stack.roots[-1]
 
+
+
         if best[1] == LEFT_ARC or best[1] == RIGHT_ARC:
             #attach
             child.pred_parent_id = parent.id
@@ -176,17 +178,11 @@ class ArcHybridLSTM:
             #update head representation
             if self.rlMostFlag:
                 #deepest leftmost/rightmost descendant
-                if self.composition != EXTENDED_PERCEPTRON_CMP: 
-                  parent.lstms[best[1] + hoffset] = child.lstms[best[1] + hoffset]
-                elif child.pred_relation not in self.compositional_relations :
-                  parent.lstms[best[1] + hoffset] = child.lstms[best[1] + hoffset]
+                parent.lstms[best[1] + hoffset] = child.lstms[best[1] + hoffset]
 
             if self.rlFlag:
                 #leftmost/rightmost child
-                if self.composition != EXTENDED_PERCEPTRON_CMP: 
-                  parent.lstms[best[1] + hoffset] = child.vec
-                elif child.pred_relation not in self.compositional_relations :
-                  parent.lstms[best[1] + hoffset] = child.lstms[best[1] + hoffset]
+                parent.lstms[best[1] + hoffset] = child.vec
 
             if self.composition:
               rel = best[0].split(':')[0]
