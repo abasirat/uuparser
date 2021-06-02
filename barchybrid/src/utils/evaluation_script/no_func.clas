@@ -1,0 +1,11 @@
+# Relations used to attach function words to content words
+aux   0.0
+case  0.0
+cc    0.0
+clf   0.0
+cop   0.0
+det   0.0
+mark  0.0
+
+# Punctuation
+punct 1.0
